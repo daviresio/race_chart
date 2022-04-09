@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:race_chart/race_chart_painter.dart';
@@ -22,41 +24,46 @@ class _HomePageState extends State<HomePage>
     _loadCsvData().then((value) {
       _controller = AnimationController(
         vsync: this,
-        duration: const Duration(seconds: 20),
+        duration: const Duration(seconds: 80),
       );
       _animation = Tween(begin: 0.0, end: 19.0).animate(_controller!);
       _controller!.forward();
-
-      _controller!.addStatusListener((status) {
-        if (status == AnimationStatus.completed) {
-          _controller!.repeat();
-        } else if (status == AnimationStatus.dismissed) {
-          _controller!.forward();
-        }
-      });
     });
   }
 
   Future<void> _loadCsvData() async {
     final csvFile = await rootBundle.loadString("assets/brands_history.csv");
-
     final fields = csvFile.split('\n');
     fields.removeAt(0);
 
     final data = <String, List<ChartData>>{};
+    final brandColors = <String, Color>{};
+
     for (final field in fields) {
       if (field.isEmpty) {
         continue;
       }
+
       final values = field.split(',');
 
       final date = values[0];
       final brand = values[1];
       final category = values[2];
-      final valurToDouble = values[3];
-      final value = int.parse(valurToDouble);
+      final valueToDouble = values[3];
+      final value = int.parse(valueToDouble);
 
-      final dataParsed = ChartData(date, brand, category, value.toDouble());
+      if (brandColors[brand] == null) {
+        brandColors[brand] =
+            Colors.primaries[Random().nextInt(Colors.primaries.length)];
+      }
+
+      final dataParsed = ChartData(
+        date,
+        brand,
+        category,
+        value.toDouble(),
+        brandColors[brand]!,
+      );
 
       if (data[date] == null) {
         data[date] = [dataParsed];
@@ -88,10 +95,12 @@ class _HomePageState extends State<HomePage>
                   builder: (context, _) {
                     return Center(
                       child: Padding(
-                        padding: const EdgeInsets.only(top: 50.0),
+                        padding: const EdgeInsets.only(top: 10.0),
                         child: CustomPaint(
-                          size: Size(MediaQuery.of(context).size.width,
-                              MediaQuery.of(context).size.height * 0.5),
+                          size: Size(
+                            MediaQuery.of(context).size.width,
+                            MediaQuery.of(context).size.height,
+                          ),
                           painter: RaceChartPainter(
                               data: data, animation: _animation!),
                         ),

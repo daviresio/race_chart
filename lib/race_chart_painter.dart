@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:race_chart/helpers/format_helper.dart';
 
 class RaceChartPainter extends CustomPainter {
   final List<List<ChartData>> data;
@@ -10,121 +11,137 @@ class RaceChartPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    final paint = Paint()..style = PaintingStyle.fill;
+
+    const barHeight = 32.0;
+    const barPadding = 10.0;
+    const barSize = barHeight + barPadding;
+
     final higherValue = data
         .map((list) => list.map((data) => data.value).reduce(math.max))
         .reduce(math.max);
 
-    const barHeight = 30.0;
-    const barPadding = 10.0;
-    const barSize = barHeight + barPadding;
-
     final index = animation.value.floor();
-
-    final paint = Paint()
-      ..color = Colors.blueAccent
-      ..style = PaintingStyle.fill;
 
     final dataList = data[index];
 
-    // canvas.drawRect(
-    //   Rect.fromLTWH(0, 0, size.width, size.height),
-    //   Paint()..color = Colors.green.withOpacity(0.1),
-    // );
-
     for (var i = 0; i < dataList.length; i++) {
-      double? remapedValue;
+      final currentData = dataList[i];
 
-      final newList1 = [...dataList];
-      final newList2 = [...data[index + 1]];
-      newList1.sort((a, b) => b.value.compareTo(a.value));
-      newList2.sort((a, b) => b.value.compareTo(a.value));
-      final index1 =
-          newList1.indexWhere((element) => element.brand == dataList[i].brand);
-      var index2 =
-          newList2.indexWhere((element) => element.brand == dataList[i].brand);
+      final nextListIndex = index + 1 >= data.length ? index : index + 1;
 
-      if (index2 == -1) {
-        index2 = index1;
+      final currentList = [...dataList];
+      final nexList = [...data[nextListIndex]];
+      currentList.sort((a, b) => b.value.compareTo(a.value));
+      nexList.sort((a, b) => b.value.compareTo(a.value));
+
+      var nextIndex =
+          nexList.indexWhere((element) => element.brand == currentData.brand);
+
+      if (nextIndex == -1) {
+        nextIndex = i;
       }
 
-      try {
-        if (index + 1 <= data.length - 1) {
-          remapedValue = remap(
-            animation.value,
-            animation.value.floor().toDouble(),
-            animation.value.ceil().toDouble(),
-            newList1[index1].value,
-            newList2[index2].value,
-          );
-        }
-      } catch (e) {
-        print(e);
-      }
-
-      final floor = animation.value.floor().toDouble();
-
-      final ceil = animation.value.ceil().toDouble();
+      final remapedValue = remap(
+        animation.value,
+        animation.value.floor().toDouble(),
+        animation.value.ceil().toDouble(),
+        currentList[i].value,
+        nexList[nextIndex].value,
+      );
 
       final indexRemapped = remap(
         animation.value,
         animation.value.floor().toDouble(),
         animation.value.ceil().toDouble(),
-        index1.toDouble(),
-        index2.toDouble(),
+        i.toDouble(),
+        nextIndex.toDouble(),
       );
 
       final startY = barSize * indexRemapped;
       final endY = startY + barHeight;
-      const startX = 0.0;
+      const startX = -3.0;
+      final endX =
+          remap(remapedValue, 0, higherValue.toDouble(), 0, size.width - 120);
 
-      final endX = remap(
-          (remapedValue == null || remapedValue.isNaN)
-              ? dataList[i].value
-              : remapedValue,
-          0,
-          higherValue.toDouble(),
-          0,
-          size.width);
+      final rect = RRect.fromLTRBR(
+          startX, startY, endX, endY, const Radius.circular(5.0));
+      paint.style = PaintingStyle.fill;
+      paint.color = currentData.color.withOpacity(0.4);
 
-      final rect = Rect.fromLTRB(startX, startY, endX, endY);
+      canvas.drawRRect(rect, paint);
 
-      canvas.drawRect(rect, paint);
+      paint.style = PaintingStyle.stroke;
+      paint.strokeWidth = 2.0;
+      paint.color = currentData.color;
+      canvas.drawRRect(rect, paint);
 
-      final TextSpan span = TextSpan(
-          text: dataList[i].brand,
-          style: const TextStyle(color: Colors.redAccent, fontSize: 30));
-
-      final textPainter = TextPainter(
-        text: span,
-        textAlign: TextAlign.left,
-        textDirection: TextDirection.ltr,
+      final TextSpan spanBrand = TextSpan(
+        text: currentData.brand,
+        style: const TextStyle(
+            color: Colors.white, fontSize: 25, fontWeight: FontWeight.w600),
       );
-      textPainter.layout();
-      textPainter.paint(canvas, Offset(endX, startY));
+
+      final textPainterBrand = _getTextPainter(spanBrand);
+      textPainterBrand.paint(
+          canvas, Offset(endX - textPainterBrand.width - 5, startY));
+
+      final valueRemapped = remap(
+        animation.value,
+        animation.value.floor().toDouble(),
+        animation.value.ceil().toDouble(),
+        currentData.value,
+        data[nextListIndex][i].value,
+      );
+
+      final TextSpan spanValue = TextSpan(
+        text: moneyNoCents(valueRemapped),
+        style: TextStyle(
+          color: Colors.black.withOpacity(0.65),
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+        ),
+      );
+
+      final textPainterValue = _getTextPainter(spanValue);
+      textPainterValue.paint(
+        canvas,
+        Offset(endX + 5, startY + 5),
+      );
     }
 
-    final TextSpan span = TextSpan(
+    final TextSpan spanYear = TextSpan(
       text: dataList.first.date.split('-').first,
       style: const TextStyle(
-        color: Colors.black,
-        fontSize: 30,
+        color: Colors.black54,
+        fontSize: 50,
         fontWeight: FontWeight.bold,
       ),
     );
 
-    final textPainter = TextPainter(
-      text: span,
-      textAlign: TextAlign.left,
-      textDirection: TextDirection.ltr,
-    );
-    textPainter.layout();
-    textPainter.paint(canvas, Offset(size.width * 0.8, size.height * 0.8));
+    final textPainterYear = _getTextPainter(spanYear);
+    textPainterYear.paint(
+        canvas,
+        Offset(
+          size.width - textPainterYear.width - 100,
+          size.height - textPainterYear.height - 60,
+        ));
   }
 
   @override
   bool shouldRepaint(covariant RaceChartPainter oldDelegate) {
     return true;
-    // return oldDelegate.animation.value != animation.value;
+  }
+
+  TextPainter _getTextPainter(TextSpan text) {
+    final textPainter = TextPainter(
+      text: text,
+      textAlign: TextAlign.left,
+      textDirection: TextDirection.ltr,
+    );
+    textPainter.layout();
+
+    return textPainter;
   }
 }
 
@@ -133,8 +150,9 @@ class ChartData {
   final String brand;
   final String category;
   final double value;
+  final Color color;
 
-  ChartData(this.date, this.brand, this.category, this.value);
+  ChartData(this.date, this.brand, this.category, this.value, this.color);
 }
 
 double remap(
