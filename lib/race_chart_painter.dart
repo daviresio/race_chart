@@ -76,15 +76,14 @@ class RaceChartPainter extends CustomPainter {
       paint.color = currentData.color;
       canvas.drawRRect(rect, paint);
 
-      final TextSpan spanBrand = TextSpan(
+      final textBrand = TextSpan(
         text: currentData.brand,
         style: const TextStyle(
             color: Colors.white, fontSize: 25, fontWeight: FontWeight.w600),
       );
 
-      final textPainterBrand = _getTextPainter(spanBrand);
-      textPainterBrand.paint(
-          canvas, Offset(endX - textPainterBrand.width - 5, startY));
+      final painterBrand = _getTextPainter(textBrand);
+      painterBrand.paint(canvas, Offset(endX - painterBrand.width - 5, startY));
 
       final valueRemapped = remap(
         animation.value,
@@ -94,7 +93,7 @@ class RaceChartPainter extends CustomPainter {
         data[nextListIndex][i].value,
       );
 
-      final TextSpan spanValue = TextSpan(
+      final textValue = TextSpan(
         text: moneyNoCents(valueRemapped),
         style: TextStyle(
           color: Colors.black.withOpacity(0.65),
@@ -103,14 +102,14 @@ class RaceChartPainter extends CustomPainter {
         ),
       );
 
-      final textPainterValue = _getTextPainter(spanValue);
-      textPainterValue.paint(
+      final painterValue = _getTextPainter(textValue);
+      painterValue.paint(
         canvas,
         Offset(endX + 5, startY + 5),
       );
     }
 
-    final TextSpan spanYear = TextSpan(
+    final textYear = TextSpan(
       text: dataList.first.date.split('-').first,
       style: const TextStyle(
         color: Colors.black54,
@@ -119,12 +118,12 @@ class RaceChartPainter extends CustomPainter {
       ),
     );
 
-    final textPainterYear = _getTextPainter(spanYear);
-    textPainterYear.paint(
+    final painterYear = _getTextPainter(textYear);
+    painterYear.paint(
         canvas,
         Offset(
-          size.width - textPainterYear.width - 100,
-          size.height - textPainterYear.height - 60,
+          size.width - painterYear.width - 100,
+          size.height - painterYear.height - 60,
         ));
   }
 

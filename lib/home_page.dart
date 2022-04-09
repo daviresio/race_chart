@@ -27,7 +27,16 @@ class _HomePageState extends State<HomePage>
         duration: const Duration(seconds: 80),
       );
       _animation = Tween(begin: 0.0, end: 19.0).animate(_controller!);
+
       _controller!.forward();
+
+      _controller!.addStatusListener((status) {
+        if (status == AnimationStatus.completed) {
+          _controller!.repeat();
+        } else if (status == AnimationStatus.dismissed) {
+          _controller!.forward();
+        }
+      });
     });
   }
 
@@ -86,28 +95,23 @@ class _HomePageState extends State<HomePage>
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Colors.white,
-      child: _animation == null
-          ? const SizedBox.shrink()
-          : SingleChildScrollView(
-              child: AnimatedBuilder(
-                  animation: _animation!,
-                  builder: (context, _) {
-                    return Center(
-                      child: Padding(
-                        padding: const EdgeInsets.only(top: 10.0),
-                        child: CustomPaint(
-                          size: Size(
-                            MediaQuery.of(context).size.width,
-                            MediaQuery.of(context).size.height,
-                          ),
-                          painter: RaceChartPainter(
-                              data: data, animation: _animation!),
-                        ),
+        color: Colors.white,
+        child: _animation == null
+            ? const SizedBox.shrink()
+            : AnimatedBuilder(
+                animation: _animation!,
+                builder: (context, _) {
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 10.0),
+                    child: CustomPaint(
+                      size: Size(
+                        MediaQuery.of(context).size.width,
+                        MediaQuery.of(context).size.height,
                       ),
-                    );
-                  }),
-            ),
-    );
+                      painter:
+                          RaceChartPainter(data: data, animation: _animation!),
+                    ),
+                  );
+                }));
   }
 }
