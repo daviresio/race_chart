@@ -42,7 +42,7 @@ class RaceChartPainter extends CustomPainter {
         nextIndex = i;
       }
 
-      final remapedValue = remap(
+      var remapedValue = remap(
         animation.value,
         animation.value.floor().toDouble(),
         animation.value.ceil().toDouble(),
@@ -50,13 +50,21 @@ class RaceChartPainter extends CustomPainter {
         nexList[nextIndex].value,
       );
 
-      final indexRemapped = remap(
+      if (remapedValue.isNaN) {
+        remapedValue = currentList[i].value;
+      }
+
+      var indexRemapped = remap(
         animation.value,
         animation.value.floor().toDouble(),
         animation.value.ceil().toDouble(),
         i.toDouble(),
         nextIndex.toDouble(),
       );
+
+      if (indexRemapped.isNaN) {
+        indexRemapped = i.toDouble();
+      }
 
       final startY = barSize * indexRemapped;
       final endY = startY + barHeight;
@@ -85,13 +93,17 @@ class RaceChartPainter extends CustomPainter {
       final painterBrand = _getTextPainter(textBrand);
       painterBrand.paint(canvas, Offset(endX - painterBrand.width - 5, startY));
 
-      final valueRemapped = remap(
+      var valueRemapped = remap(
         animation.value,
         animation.value.floor().toDouble(),
         animation.value.ceil().toDouble(),
         currentData.value,
         data[nextListIndex][i].value,
       );
+
+      if (valueRemapped.isNaN) {
+        valueRemapped = currentData.value;
+      }
 
       final textValue = TextSpan(
         text: moneyNoCents(valueRemapped),
